@@ -44,6 +44,14 @@ Au regard de boxplot, on constate que le Snapshot2 prend souvent les valeurs plu
 
 ```{r}
 #  Stat. descriptives à completer
+ks.test(CYS$snapshot.1,CYS$snapshot.2,alternative = "greater")
+```
+
+La p_valeur associée au test Kolmogrov est inférieure à 0,05 donc on accepte que les étudiants ont des notes de Snapshot2 plus élevé que Snapshot1.  
+
+
+```{r}
+#  Stat. descriptives à completer
 boxplot(CYS$snapshot.2~CYS$CYS.S3,names=c("Non utilisé","Utilisé"), 
         ylab="Résultat Snapshot2 en S3", 
         main=" Résultat Snapshot2 en S3 selon l'utilisation de CYS en S3")
@@ -73,7 +81,8 @@ boxplot(dif_snap~CYS$CMI, ylab="Différence de résultat entre Snapshot1 et  Sna
 boxplot(ratio_snap~CYS$CMI, ylab="Ratio de résultat entre Snapshot1 et  Snapshot2 en S3",
         main=" Ratio de résultat entre Snapshot1 et  Snapshot2 en S3 selon CMI en S3")
 ```
-## Test d'un modèle ANOVA de 3 facteurs(CYS S3, CMI, TP S3)
+
+# Test d'un modèle ANOVA de 3 facteurs(CYS S3, CMI, TP S3)
 
 
 ```{r}
@@ -138,6 +147,7 @@ De même façon, on trouve le meilleur modèle pour modéliser le ratio_snap:
 ```{r}
 # A completer
 modBIC2=lm(ratio_snap ~ CYS$CMI,data=CYS)
+summary(modBIC2)
 anova(modBIC2,mod2)
 ```
 La p_valeur de Test Fisher est 0,31 supérieure que 0,05 donc on accepte le modèle modBIC1.
@@ -163,13 +173,35 @@ Cela montre l'impact de CMI S3 sur l'évolution de résultat.
 Dans ces deux cas on ne trouve pas l'effet de la variable TP S3.
 
 
+# Test d'un modèle ANCOVA de 3 facteurs qualitatives (CYS S3, CMI, TP S3) et 1 facteur quantitative(Snapshot1) pour modéliser le Snapshot2
+
+On souhaite expliquer le Snapshot2 en fonction du Snapshot1, des choix (de la langue de TP, l'utilisation de CMI et celle de CYS) en S3. On met en place un modèle d'analyse de la covariance. 
+
+```{r}
+# A completer
+modR=lm(CYS$snapshot.2 ~ (CYS$snapshot.1+CYS$TP.S3+CYS$CYS.S3+ CYS$CMI)^2,data=CYS)
+summary(modR)
+```
+
+```{r}
+# A completer
+step.backward = step(modR,direction="backward",k=log(nrow(CYS)))
+```
+
+```{r}
+# A completer
+modbest=lm(CYS$snapshot.2 ~ CYS$snapshot.1 + CYS$TP.S3 + CYS$CYS.S3 + CYS$CMI + 
+    CYS$CYS.S3:CYS$CMI,data=CYS)
+summary(modbest)
+anova(modbest,modR)
+```
+Selon le test d'BIC, on trouve le meilleur modèle modBIC2: 
+
+$CYS\$snapshot.2 \sim CYS\$snapshot.1 + CYS\$TP.S3 + CYS\$CYS.S3 + CYS\$CMI + CYS\$CYS.S3:CYS\$CMI$
 
 
+Alors, sous le modèle ANCOVA on a trouvé que les trois facteurs qualitatives ont des impactes sur le résultat Snapshot2. Or, le Snaphot1 a un gros effet sur le résultat de Snapshot2. On y trouve aussi un terme d'interaction entre la variable CYS.S3 et la variable CMI et celui dernier a un effet important négatif sur le Snapshot2.
 
+ie, un étudiant en CMI utilisant l'outil Check Your Smile a tendance de dégrader environ 2,6 points (-3,02652+0,43506) et un étudiant non CMI utilisant l'outil Check Your Smile a tendance de progresser environ 0,4 points (0,43506)
 
-
-
-
-
-
-
+On voit que le modèle ANCOVA nous donne un R-ajusté bien meilleur que le modèle ANOVA. (0,4615>>0,006 et 0,4615>>0,09)
