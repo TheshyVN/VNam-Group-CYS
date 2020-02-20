@@ -20,17 +20,57 @@ library(gridExtra)
 library(ggfortify)
 library(leaps)
 library(MASS)
+library(ggplot2)
 ```
 
-# Etude des données W1_version1
+# Etude des données 
 
 ## Les données
+
+```{r}
+CYS3 = read.csv("Semestre3_Complet.csv")
+summary(CYS3)
+```
+```{r}
+N=242
+table(CYS3$CYS.S3)/N*100
+#pie(table(CYS3$CYS.S3))
+```
+Commentaire:
+
+On trouve que presque un tier des étudiants utilisent l'outil CheckYourSmile en semestre 3. 
+```{r}
+table(CYS3$CMI)/N*100
+#pie(table(CYS3$CMI))
+```
+Commentaire:
+
+On trouve que presque 15% des étudiants sont CMI en semestre 3. Or, presque 9% des étudiants ne donnent pas une telle réponse pertinente. 
+```{r}
+table(CYS3$TP.S3)/N*100
+#pie(table(CYS3$TP.S3))
+```
+Commentaire:
+
+On trouve que presque 64% des étudiants pratiquent les TP en français en semestre 3 et 26% pratiquent les TP en anglais. Or, presque 10% des étudiants ne donnent pas une telle réponse pertinente. 
+
+
+Commentaire:
+
+On trouve que presque un tier
+
+```{r, eval=F}
+library(gmodels)
+CrossTable(CYS3$CYS.S3,CYS3$CMI)
+CrossTable(CYS3$CYS.S3,CYS3$TP.S3)
+```
+
+
 ```{r}
 CYS = read.csv("W1_version1.csv")
-head(CYS)
-str(CYS)
 summary(CYS)
 ```
+
 
 
 ```{r}
@@ -200,6 +240,58 @@ anova(modbest,modR)
 Selon le test d'BIC, on trouve le meilleur modèle modBIC2: 
 
 $CYS\$snapshot.2 \sim CYS\$snapshot.1 + CYS\$TP.S3 + CYS\$CYS.S3 + CYS\$CMI + CYS\$CYS.S3:CYS\$CMI$
+
+
+## Train+ Test par le modèle ANCOVA
+
+### Train
+
+```{r}
+n <- nrow(CYS) 
+trainIndices <- sample(n, size = 2 * n / 3)
+train <- CYS[trainIndices, ]
+test <- CYS[-trainIndices, ]
+```
+
+### Test
+
+```{r}
+m0=lm(snapshot.2 ~ snapshot.1 + TP.S3 + CYS.S3 + CMI + 
+    CYS.S3:CMI,data=train)
+p <- predict(m0, newdata = test, type = "response")
+table(p) 
+#p0<-(CYS$snapshot.2)[-trainIndices]
+p0<-test$snapshot.2
+SCR=norm(p-p0,type="2")^2
+SCT=norm(p0-mean(p0),type="2")^2
+Rajustee<-1-SCR/SCT
+Rajustee
+#norm(p,type="2")
+```
+
+```{r ggplotresidussimple}
+autoplot(modbest)
+```
+
+Vérifions les 4 hypothèses pour ce modèle:
+
+Hypothèse H1 : Les erreurs sont centrées
+
+Hypothèse H2 : La variance des erreurs est constante
+
+Hypothèse H3 : Les résidus sont indépendantes
+
+Hypothèse H4 : Les données suivent des lois gaussiennes
+
+- Les résidus sont situés aléatoirement sur les deux côtés de 0. Or, on ne trouve pas la forme bannane ni la forme trompette, donc on peut déduire que H1 et H2 sont vérifiées
+
+- On observe dans le graphe Residuals vs Fitted aucun phénomène de pacquets sur les côtés de 0 donc H3 est vérifiée.
+
+- Au regard du graphe Normal Q-Q, on constate que les résidus suivent une loi gaussienne. Ainsi, H4 est vérifiée.
+
+
+
+
 
 
 # Conclusion:
