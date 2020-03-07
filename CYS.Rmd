@@ -45,14 +45,14 @@ table(CYS3$CMI)/N*100
 ```
 Commentaire:
 
-On trouve que presque 15% des étudiants sont CMI en semestre 3. Or, presque 9% des étudiants ne donnent pas une telle réponse pertinente. 
+On trouve que presque 15% des étudiants sont CMI en semestre 3. Or, presque 9% des étudiants ne donnent pas de réponse. 
 ```{r}
 table(CYS3$TP.S3)/N*100
 #pie(table(CYS3$TP.S3))
 ```
 Commentaire:
 
-On trouve que presque 64% des étudiants pratiquent les TP en français en semestre 3 et 26% pratiquent les TP en anglais. Or, presque 10% des étudiants ne donnent pas une telle réponse pertinente. 
+On trouve que presque 64% des étudiants pratiquent les TP en français en semestre 3 et 26% pratiquent les TP en anglais. Or, presque 10% des étudiants ne donnent pas de réponse. 
 
 
 Commentaire:
@@ -63,11 +63,12 @@ On trouve que presque un tier
 library(gmodels)
 CrossTable(CYS3$CYS.S3,CYS3$CMI)
 CrossTable(CYS3$CYS.S3,CYS3$TP.S3)
+CrossTable(CYS3$CMI,CYS3$TP.S3)
 ```
 
 
 ```{r}
-CYS = read.csv("W1_version1.csv")
+CYS = read.csv("DonneeS3_filtre.csv")
 summary(CYS)
 ```
 
@@ -135,7 +136,7 @@ summary(mod1)
 
 ```{r}
 # A completer - fonction lm
-step.backward = step(mod1)
+#step.backward = step(mod1)
 ```
 Selon le test d'AIC, on trouve le meilleur modèle modAIC1: 
 
@@ -149,7 +150,7 @@ anova(modAIC1,mod1)
 La p_valeur de Test Fisher est 0,2854 supérieure que 0,05 donc on accepte le modèle modAIC1.
 
 ```{r}
-step.backward = step(mod1,direction="backward",k=log(nrow(CYS)))
+#step.backward = step(mod1,direction="backward",k=log(nrow(CYS)))
 ```
 Selon le test d'BIC, on trouve le meilleur modèle: 
 
@@ -176,7 +177,7 @@ summary(mod1)
 
 
 ```{r}
-step.backward = step(mod2,direction="backward",k=log(nrow(CYS)))
+#step.backward = step(mod2,direction="backward",k=log(nrow(CYS)))
 ```
 Selon le test d'BIC, on trouve le meilleur modèle modBIC2: 
 
@@ -227,7 +228,7 @@ summary(modR)
 
 ```{r}
 # A completer
-step.backward = step(modR,direction="backward",k=log(nrow(CYS)))
+#step.backward = step(modR,direction="backward",k=log(nrow(CYS)))
 ```
 
 ```{r}
@@ -241,6 +242,26 @@ Selon le test d'BIC, on trouve le meilleur modèle modBIC2:
 
 $CYS\$snapshot.2 \sim CYS\$snapshot.1 + CYS\$TP.S3 + CYS\$CYS.S3 + CYS\$CMI + CYS\$CYS.S3:CYS\$CMI$
 
+En fait, on veut estimer le résultat de Snapshot2 par le modèle:
+$$
+(modbest): Snapshot2_{ijkl}  = \mu + \alpha Snapshot1_{ijkl} + \beta_{i} + \gamma_j + \theta_k + \delta_{jk} +\varepsilon_{ijkl},\, \forall i=1, \, 2,\, \forall j=1,2, \forall k=1,2
+$$
+où:
+
+i,j,k sont les indices de modalité pour les variables qualitatives TP.S3, CYS.S3 et CMI, respectivement.(1 pour la réponse Non et 2 pour la réponse Oui, dans le cas de TP 1 pour FR et 2 pour GB)
+
+L'indice ijkl est pour indiquer l'individu l-ième ayant des modalités i,j,k pour TP.S3, CYS.S3 et CMI, respectivement. 
+$\varepsilon_{ijkl}$ est des erreurs de l'estimation de l'individu ayant l'indice ijkl.
+
+D'où:
+$$
+\mu=4.62384 \\
+\alpha=0.56912\\
+\beta_{1}= \gamma_1 = \theta_1 = \delta_{11}= \delta_{12}== \delta_{21}=0\\
+\beta_{2}=1.90361\\
+\gamma_2=0.43506\\
+\delta_{22}=-3.02652
+$$
 
 ## Train+ Test par le modèle ANCOVA
 
@@ -289,10 +310,65 @@ Hypothèse H4 : Les données suivent des lois gaussiennes
 
 - Au regard du graphe Normal Q-Q, on constate que les résidus suivent une loi gaussienne. Ainsi, H4 est vérifiée.
 
+# Abre binaire de régression
 
+```{r}
+library(rpart) # chargement de la librairie
+data3=CYS[,c(4,5,7,9,11)]
+data3[,"CYS_CMI"]=(data3[,"CYS.S3"]=="oui")*(data3[,"CMI"]=="oui")
+data3[,"CYS_CMI"]=as.factor(data3[,"CYS_CMI"])
+data3[,"CYS_TP"]=(data3[,"CYS.S3"]=="oui")*(data3[,"TP.S3"]=="GB")
+data3[,"CYS_TP"]=as.factor(data3[,"CYS_TP"])
+data3[,"TP_CMI"]=(data3[,"TP.S3"]=="GB")*(data3[,"CMI"]=="oui")
+data3[,"TP_CMI"]=as.factor(data3[,"TP_CMI"])
+data3[,"CYS_CMInon"]=(data3[,"CYS.S3"]=="oui")*(data3[,"CMI"]=="non")
+data3[,"CYS_CMInon"]=as.factor(data3[,"CYS_CMInon"])
+data3[,"CYS_TPFR"]=(data3[,"CYS.S3"]=="oui")*(data3[,"TP.S3"]=="FR")
+data3[,"CYS_TPFR"]=as.factor(data3[,"CYS_TPFR"])
+data4=data3
+data4[,"eval"]=data4[,"snapshot.2"]-data4[,"snapshot.1"]
+data4=data4[,c(3,4,5,6,7,8,9,10,11)]
+summary(data3)
+summary(data4)
+tree.reg3=rpart(snapshot.2~.,data=data3,control=rpart.control(cp=0.001))
+tree.reg4=rpart(eval~.,data=data4,control=rpart.control(cp=0.001))
+```
 
+```{r}
+#plot(tree.reg3)
+#text(tree.reg3)
+```
 
+```{r}
+library(partykit)
+xmat3=xpred.rpart(tree.reg3)
+xerr3=(xmat3-data3[,"snapshot.2"])^2
+CVerr3=apply(xerr3,2,sum)
+xmat4=xpred.rpart(tree.reg4)
+xerr4=(xmat4-data4[,"eval"])^2
+CVerr4=apply(xerr4,2,sum)
+#as.numeric(attributes(which.min(CVerr))$names)
+#tree.reg3=rpart(snapshot.2~.,data=data3,control=rpart.control(cp=as.numeric(attributes(which.min(CVerr3))$names)))
+#plot(as.party(tree.reg3), type="simple")
+tree.reg4=rpart(eval~.,data=data4,control=rpart.control(cp=as.numeric(attributes(which.min(CVerr4))$names)))
+plot(as.party(tree.reg4), type="simple")
+```
 
+Commentaire:
+
+Au regard de l'arbre de régression, on trouve les résultats suivants:
+
+- Un étudiant utilisant l'outil CYS, n'étant pas en CMI a des progressions en résultat moyen 2,739 et 4,176 si il a des TP en Français et en Anglais respectivement. (cf des feuilles 8,9)
+
+- Un étudiant n'utilisant pas l'outil CYS et n'étant pas en CMI a des progressions en résultat moyen 1,986.(cf feuille 3)
+
+- Un étudiant utilisant l'outil CYS, étant en CMI a des progressions en résultat moyen 1,75. (cf des feuilles 5)
+
+- Un étudiant n'utilisant pas l'outil CYS, étant en CMI a des progressions en résultat moyen 4,125. (cf des feuilles 6)
+
+Ainsi, un étudiant utilsant l'outil CYS mais n'étant pas en CMI a tendance de progresser mieux en comparaison avec un étudiant  n'utilisant pas l'outil CYS et n'étant pas en CMI.
+
+Pourtant,un étudiant utilsant l'outil CYS mais étant en CMI a tendance de progresser moins en comparaison avec un étudiant  n'utilisant pas l'outil CYS et étant en CMI.
 
 # Conclusion:
 
@@ -309,10 +385,11 @@ Pourtant, l'analyse des donnée peut s'améliorer car on n'a gardé que 181 donn
 
 ![Données Manquantes](donnee_manquantes.png)
 
+
 En semestre 4, les données ne sont pas assez bonnes:
 
 - 126 individus n'ont pas de note de Snapshot1
 - 51 individus n'ont pas de note de Snapshot2
 - 28 individus ont des réponses invalidées si ils utilisent ou pas l'outil CYS (la valeur de réponse est soit BLANK soit ?)
 - 86 individus ont des réponses invalidées de la langue pour TP (la valeur de réponse est soit non soit BLANK)
-- 91 individus ont des réponses invalidées si ils sont CMI (la valeur de réponse est soit BLANK soit ? soit N/A)
+- 43 individus ont des réponses invalidées si ils sont CMI (la valeur de réponse est soit BLANK soit ? )
