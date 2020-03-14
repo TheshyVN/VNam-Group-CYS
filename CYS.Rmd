@@ -440,7 +440,7 @@ Commentaire:
 
 Au regard de l'arbre de régression, on trouve les résultats suivants:
 
-- On considère 2 modèles: l'un modélise snapshot2 en fonction d'autres variables et l'autre modélise l'écart snapshot2-$\alpha$snapshot1 en variant $\alpha$ de 0.1 à 2.
+- On considère 2 modèles: l'un modélise snapshot2 en fonction d'autres variables et l'autre modélise l'écart snapshot2-$\alpha\times$snapshot1 en variant $\alpha$ de 0.1 à 2.
 
 - On a fait une boucle en variant les valeurs de $\alpha$ et on trouve le $\alpha$ "optimal" pour rendre l'erreur plus petite possible. $\alpha=0.55$
 
