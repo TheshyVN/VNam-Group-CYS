@@ -315,6 +315,7 @@ Hypothèse H4 : Les données suivent des lois gaussiennes
 ```{r}
 library(rpart) # chargement de la librairie
 data3=CYS[,c(4,5,7,9,11)]
+data5=CYS[,c(4,5,7,9,11)]
 data3[,"CYS_CMI"]=(data3[,"CYS.S3"]=="oui")*(data3[,"CMI"]=="oui")
 data3[,"CYS_CMI"]=as.factor(data3[,"CYS_CMI"])
 data3[,"CYS_TP"]=(data3[,"CYS.S3"]=="oui")*(data3[,"TP.S3"]=="GB")
@@ -330,8 +331,8 @@ data4[,"eval"]=data4[,"snapshot.2"]-data4[,"snapshot.1"]
 data4=data4[,c(3,4,5,6,7,8,9,10,11)]
 summary(data3)
 summary(data4)
-tree.reg3=rpart(snapshot.2~.,data=data3,control=rpart.control(cp=0.001))
-tree.reg4=rpart(eval~.,data=data4,control=rpart.control(cp=0.001))
+tree.reg3=rpart(snapshot.2~.,data=data3)
+tree.reg4=rpart(eval~.,data=data4)
 ```
 
 ```{r}
@@ -347,11 +348,73 @@ CVerr3=apply(xerr3,2,sum)
 xmat4=xpred.rpart(tree.reg4)
 xerr4=(xmat4-data4[,"eval"])^2
 CVerr4=apply(xerr4,2,sum)
-#as.numeric(attributes(which.min(CVerr))$names)
-#tree.reg3=rpart(snapshot.2~.,data=data3,control=rpart.control(cp=as.numeric(attributes(which.min(CVerr3))$names)))
-#plot(as.party(tree.reg3), type="simple")
+tree.reg3=rpart(snapshot.2~.,data=data3,control=rpart.control(cp=as.numeric(attributes(which.min(CVerr3))$names)))
+plot(as.party(tree.reg3), type="simple")
 tree.reg4=rpart(eval~.,data=data4,control=rpart.control(cp=as.numeric(attributes(which.min(CVerr4))$names)))
 plot(as.party(tree.reg4), type="simple")
+```
+
+```{r}
+tree.reg5=rpart(snapshot.2~.,data=data5)
+xmat5=xpred.rpart(tree.reg5)
+xerr5=(xmat5-data5[,"snapshot.2"])^2
+CVerr5=apply(xerr5,2,sum)
+```
+
+
+```{r}
+data6=data5
+data6[,"eval"]=data6[,"snapshot.2"]-data6[,"snapshot.1"]
+data6=data6[,-c(1,2)]
+```
+
+
+
+
+```{r}
+tree.reg5=rpart(snapshot.2~.,data=data5,control=rpart.control(cp=as.numeric(attributes(which.min(CVerr5))$names)))
+plot(as.party(tree.reg5), type="simple")
+```
+
+
+```{r}
+tree.reg6=rpart(eval~.,data=data6)
+xmat6=xpred.rpart(tree.reg6)
+xerr6=(xmat6-data6[,"eval"])^2
+CVerr6=apply(xerr6,2,sum)
+```
+
+
+
+```{r}
+tree.reg6=rpart(eval~.,data=data6,control=rpart.control(cp=as.numeric(attributes(which.min(CVerr6))$names)))
+plot(as.party(tree.reg6), type="simple")
+```
+
+```{r}
+min(CVerr3)
+```
+
+
+```{r}
+min(CVerr4)
+```
+
+
+
+```{r}
+min(CVerr5)
+```
+
+```{r}
+min(CVerr6)
+```
+
+```{r}
+residuals=data4$eval-predict(tree.reg4,data4)
+SSE=sum(residuals^2)
+SST=sum((data4$eval-mean(data4$eval))^2)
+SSE/SST
 ```
 
 Commentaire:
@@ -368,7 +431,7 @@ Au regard de l'arbre de régression, on trouve les résultats suivants:
 
 Ainsi, un étudiant utilsant l'outil CYS mais n'étant pas en CMI a tendance de progresser mieux en comparaison avec un étudiant  n'utilisant pas l'outil CYS et n'étant pas en CMI.
 
-Pourtant,un étudiant utilsant l'outil CYS mais étant en CMI a tendance de progresser moins en comparaison avec un étudiant  n'utilisant pas l'outil CYS et étant en CMI.
+Pourtant,un étudiant utilsant l'outil CYS mais étant en CMI a tendance de progresser moins bien en comparaison avec un étudiant  n'utilisant pas l'outil CYS et étant en CMI.
 
 # Conclusion:
 
