@@ -143,9 +143,9 @@ Selon le test d'AIC, on trouve le meilleur modèle modAIC1:
 $$ dif\_ snap \sim CYS\$CYS.S3 + CYS\$TP.S3 + CYS\$CMI + CYS\$CYS.S3:CYS\$CMI $$
 ```{r}
 # A completer
-modAIC1=lm(dif_snap ~ CYS$CYS.S3 + CYS$TP.S3 + CYS$CMI + CYS$CYS.S3:CYS$CMI,data=CYS)
-summary(modAIC1)
-anova(modAIC1,mod1)
+#modAIC1=lm(dif_snap ~ CYS$CYS.S3 + CYS$TP.S3 + CYS$CMI + CYS$CYS.S3:CYS$CMI,data=CYS)
+#summary(modAIC1)
+#anova(modAIC1,mod1)
 ```
 La p_valeur de Test Fisher est 0,2854 supérieure que 0,05 donc on accepte le modèle modAIC1.
 
@@ -164,7 +164,7 @@ anova(modBIC1,mod1)
 La p_valeur de Test Fisher est 0,105 supérieure que 0,05 donc on accepte le modèle modBIC1.
 ```{r}
 # A completer
-anova(modBIC1,modAIC1)
+#anova(modBIC1,modAIC1)
 ```
 La p_valeur de Test Fisher est 0,105 supérieure que 0,05 donc on accepte le modèle modBIC1.
 
@@ -265,30 +265,32 @@ $$
 
 ## Train+ Test par le modèle ANCOVA
 
-### Train
+
+
 
 ```{r}
-n <- nrow(CYS) 
-trainIndices <- sample(n, size = 2 * n / 3)
-train <- CYS[trainIndices, ]
-test <- CYS[-trainIndices, ]
+all.err=numeric(0)
+K=9
+n=nrow(CYS)
+taille=n%/%K
+set.seed(5)
+alea<-runif(n)
+rang=rank(alea)
+bloc=(rang-1)%/%taille+1
+bloc=as.factor(bloc)
+err=0
+for (k in 1:K){
+  dt=CYS[bloc==k,]
+  modk=lm(snapshot.2 ~ snapshot.1 +TP.S3 + CYS.S3 + CMI + 
+    CYS.S3:CMI,data=CYS[bloc!=k,])
+  pred=predict(modk,newdata=dt)
+  xerr=sum((dt$snapshot.2-pred)^2)
+  err= err+xerr
+}
+print(err)
 ```
 
-### Test
 
-```{r}
-m0=lm(snapshot.2 ~ snapshot.1 + TP.S3 + CYS.S3 + CMI + 
-    CYS.S3:CMI,data=train)
-p <- predict(m0, newdata = test, type = "response")
-table(p) 
-#p0<-(CYS$snapshot.2)[-trainIndices]
-p0<-test$snapshot.2
-SCR=norm(p-p0,type="2")^2
-SCT=norm(p0-mean(p0),type="2")^2
-Rajustee<-1-SCR/SCT
-Rajustee
-#norm(p,type="2")
-```
 
 ```{r ggplotresidussimple}
 autoplot(modbest)
@@ -348,10 +350,11 @@ CVerr3=apply(xerr3,2,sum)
 xmat4=xpred.rpart(tree.reg4)
 xerr4=(xmat4-data4[,"eval"])^2
 CVerr4=apply(xerr4,2,sum)
-tree.reg3=rpart(snapshot.2~.,data=data3,control=rpart.control(cp=as.numeric(attributes(which.min(CVerr3))$names)))
-plot(as.party(tree.reg3), type="simple")
-tree.reg4=rpart(eval~.,data=data4,control=rpart.control(cp=as.numeric(attributes(which.min(CVerr4))$names)))
-plot(as.party(tree.reg4), type="simple")
+#tree.reg3=rpart(snapshot.2~.,data=data3,
+#  control=rpart.control(cp=as.numeric(attributes(which.min(CVerr3))$names)))
+#plot(as.party(tree.reg3), type="simple")
+#tree.reg4=rpart(eval~.,data=data4,control=rpart.control(cp=as.numeric(attributes(which.min(CVerr4))$names)))
+#plot(as.party(tree.reg4), type="simple")
 ```
 
 ```{r}
@@ -364,7 +367,7 @@ CVerr5=apply(xerr5,2,sum)
 
 ```{r}
 data6=data5
-data6[,"eval"]=data6[,"snapshot.2"]-data6[,"snapshot.1"]
+data6[,"eval"]=data6[,"snapshot.2"]-0.55*data6[,"snapshot.1"]
 data6=data6[,-c(1,2)]
 ```
 
@@ -372,8 +375,22 @@ data6=data6[,-c(1,2)]
 
 
 ```{r}
-tree.reg5=rpart(snapshot.2~.,data=data5,control=rpart.control(cp=as.numeric(attributes(which.min(CVerr5))$names)))
+tree.reg5=rpart(snapshot.2~.,data=data5,
+                control=rpart.control(cp=as.numeric(attributes(which.min(CVerr5))$names)))
 plot(as.party(tree.reg5), type="simple")
+```
+
+```{r}
+for (alpha in seq(0.1,2,0.1)){
+  data7=data5
+  data7[,"eval"]=data7[,"snapshot.2"]-alpha*data7[,"snapshot.1"]
+  data7=data7[,-c(1,2)]
+  tree.reg7=rpart(eval~.,data=data7)
+  xmat7=xpred.rpart(tree.reg7)
+  xerr7=(xmat7-data7[,"eval"])^2
+  CVerr7=apply(xerr7,2,sum)
+  #print(min(CVerr7))
+}
 ```
 
 
@@ -387,17 +404,18 @@ CVerr6=apply(xerr6,2,sum)
 
 
 ```{r}
-tree.reg6=rpart(eval~.,data=data6,control=rpart.control(cp=as.numeric(attributes(which.min(CVerr6))$names)))
+tree.reg6=rpart(eval~.,data=data6,
+                control=rpart.control(cp=as.numeric(attributes(which.min(CVerr6))$names)))
 plot(as.party(tree.reg6), type="simple")
 ```
 
 ```{r}
-min(CVerr3)
+#min(CVerr3)
 ```
 
 
 ```{r}
-min(CVerr4)
+#min(CVerr4)
 ```
 
 
@@ -410,28 +428,27 @@ min(CVerr5)
 min(CVerr6)
 ```
 
+
 ```{r}
-residuals=data4$eval-predict(tree.reg4,data4)
-SSE=sum(residuals^2)
-SST=sum((data4$eval-mean(data4$eval))^2)
-SSE/SST
+#residuals=data5$snapshot.2-predict(tree.reg5,data5)
+#SSE=sum(residuals^2)
+#SST=sum((data5$snapshot.2-mean(data5$snapshot.2))^2)
+#SSE/SST
 ```
 
 Commentaire:
 
 Au regard de l'arbre de régression, on trouve les résultats suivants:
 
-- Un étudiant utilisant l'outil CYS, n'étant pas en CMI a des progressions en résultat moyen 2,739 et 4,176 si il a des TP en Français et en Anglais respectivement. (cf des feuilles 8,9)
+- On considère 2 modèles: l'un modélise snapshot2 en fonction d'autres variables et l'autre modélise l'écart snapshot2-$\alpha$snapshot1 en variant $\alpha$ de 0.1 à 2.
 
-- Un étudiant n'utilisant pas l'outil CYS et n'étant pas en CMI a des progressions en résultat moyen 1,986.(cf feuille 3)
+- On a fait une boucle en variant les valeurs de $\alpha$ et on trouve le $\alpha$ "optimal" pour rendre l'erreur plus petite possible. $\alpha=0.55$
 
-- Un étudiant utilisant l'outil CYS, étant en CMI a des progressions en résultat moyen 1,75. (cf des feuilles 5)
+- On a essayé plusieurs fois pour étudier le comportement des erreurs de validation croisée de ces deux types de l'arbre et a gardé le second.
 
-- Un étudiant n'utilisant pas l'outil CYS, étant en CMI a des progressions en résultat moyen 4,125. (cf des feuilles 6)
+- Parmi les étudiants faisant les TP en anglais, un étudiant utilisant l'outil CYS progresse moins qu'un autre n'utilisant pas CYS. (cf des feuilles 5,6,7). De plus, parmi les étudiants faisant les TP en anglais et utilisant l'outil CYS, un étudiant en CMI progresse moins qu'un autre non CMI. 
 
-Ainsi, un étudiant utilsant l'outil CYS mais n'étant pas en CMI a tendance de progresser mieux en comparaison avec un étudiant  n'utilisant pas l'outil CYS et n'étant pas en CMI.
 
-Pourtant,un étudiant utilsant l'outil CYS mais étant en CMI a tendance de progresser moins bien en comparaison avec un étudiant  n'utilisant pas l'outil CYS et étant en CMI.
 
 # Conclusion:
 
@@ -443,6 +460,10 @@ ie, un étudiant en CMI utilisant l'outil Check Your Smile a tendance de dégrad
 
 
 On voit que le modèle ANCOVA nous donne un R-ajusté bien meilleur que le modèle ANOVA. (0,4615>>0,006 et 0,4615>>0,09)
+
+L'arbre binaire de régression nous permet d'observer l'effet de l'outil CYS dans la progression des étudiants n'est pas remarquable.
+
+L'erreur de validation croisé du modèle ANCOVA est presque égale à celle du l'arbre de décision donc on trouve le même phénomène sur l'effet de CYS sur la progression des étudiants.
 
 Pourtant, l'analyse des donnée peut s'améliorer car on n'a gardé que 181 données en semestre 3 et 9 en semestre 4 sur 459 étudiants.
 
