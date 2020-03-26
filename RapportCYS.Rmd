@@ -46,6 +46,23 @@ En fait, en semestre 3, on effectue un bilan compris de 181 étudiants dont:
 
 - 160 sont en CMI alors que 31 n'y sont pas 
 
+Tableau croisé de 2 variables CMI et TP.S3
+
+```{r echo=FALSE}
+evo=CYS$snapshot.2-CYS$snapshot.1
+table(CYS$TP.S3,CYS$CMI)
+interaction.plot(CYS$CMI,CYS$CYS.S3,evo)
+interaction.plot(CYS$CMI,CYS$TP.S3,evo)
+interaction.plot(CYS$TP.S3,CYS$CYS.S3,evo)
+```
+
+On a trouvé que:
+
+- L'interaction entre CYS et CMI est importante: Un étudiant utilisant CYS progresse moins s' il est en CMI. En revanche, un étudiant n'utilisant pas CYS progresse plus s'il est en CMI.
+
+- L'interaction entre TP et CMI n'existe pas car il n'y a pas d'étudiant en CMI utilisant français pour les TPs.
+
+- L'interaction entre CYS et CMI existe: Un étudiant utilisant CYS progresse un peu plus s' il pratique les TPs en anglais. Or, un étudiant n'utilisant pas CYS progresse bien plus s'il  pratique les TPs en anglais.
 
 
 ```{r echo=FALSE}
