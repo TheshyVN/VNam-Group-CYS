@@ -67,12 +67,10 @@ On a trouvé que:
 
 ```{r echo=FALSE}
 CMInon=CYS[CYS$CMI=="non",]
-boxplot(snapshot.1~CYS.S3,data=CMInon,names=c("Non utilisé","Utilisé"), 
-        ylab="Résultat Snapshot1 en S3", 
-        main=" Résultat Snapshot1 en S3 selon CYS en S3 pour les non-CMI")
-boxplot(snapshot.2~CYS.S3,data=CMInon,names=c("Non utilisé","Utilisé"), 
-        ylab="Résultat Snapshot2 en S3", 
-        main=" Résultat Snapshot2 en S3 selon CYS en S3 pour les non-CMI")
+boxplot(snapshot.1~CYS.S3,data=CMInon,names=c("Non","Oui"), 
+        ylab="Snapshot1 in S3")
+boxplot(snapshot.2~CYS.S3,data=CMInon,names=c("Non","Oui"), 
+        ylab="Snapshot2 in S3")
 ```
 
 Selon les boxplots, on a trouvé le fait que:
@@ -81,16 +79,14 @@ Selon les boxplots, on a trouvé le fait que:
 
 - Pourtant,parmi les étudiant non en CMI, ceux utilisant CYS prend des notes de Snapshot 2 plus élevés que ceux ne l'utilisant pas.
 
-On a observé ici une éfficaité de l'outil CYS appliqués sur les étudiant non en CMI
+On a observé ici une éfficacité de l'outil CYS appliqués sur les étudiant non en CMI
 
 ```{r echo=FALSE}
 CMIoui=CYS[CYS$CMI=="oui",]
-boxplot(snapshot.1~CYS.S3,data=CMIoui,names=c("Non utilisé","Utilisé"), 
-        ylab="Résultat Snapshot1 en S3", 
-        main=" Résultat Snapshot1 en S3 selon CYS en S3 pour les CMI")
-boxplot(snapshot.2~CYS.S3,data=CMIoui,names=c("Non utilisé","Utilisé"), 
-        ylab="Résultat Snapshot2 en S3", 
-        main=" Résultat Snapshot2 en S3 selon CYS en S3 pour les CMI")
+boxplot(snapshot.1~CYS.S3,data=CMIoui,names=c("Non","Oui"), 
+        ylab="Snapshot1 in S3")
+boxplot(snapshot.2~CYS.S3,data=CMIoui,names=c("Non","Oui"), 
+        ylab="Snapshot2 in S3")
 ```
 
 
@@ -106,9 +102,8 @@ On va étudier pour ce cas l'évolution de résultat
 ```{r echo=FALSE}
 CMIoui=CYS[CYS$CMI=="oui",]
 CMIoui[,"evo"]=CMIoui[,"snapshot.2"]-CMIoui[,"snapshot.1"]
-boxplot(evo~CYS.S3,data=CMIoui,names=c("Non utilisé","Utilisé"), 
-        ylab="Résultat Snapshot1 en S3", 
-        main=" Evolution de résultat en S3 selon l'utilisation de CYS en S3 pour les CMI")
+boxplot(evo~CYS.S3,data=CMIoui,names=c("Non","Oui"), 
+        ylab="Evolution in S3")
 ```
 
 
@@ -158,6 +153,21 @@ modbest=lm(CYS$snapshot.2 ~ CYS$snapshot.1 + CYS$TP.S3 + CYS$CYS.S3 + CYS$CMI +
     CYS$CYS.S3:CYS$CMI,data=CYS)
 summary(modbest)
 ```
+```{r}
+ratio=1/3
+nr=nrow(CYS)
+ntest=ceiling(nr*ratio)
+testi=sample(1:nr,ntest)
+#print(testi)
+appri=setdiff(1:nr,testi)
+strain=CYS[appri,]
+stest=CYS[testi,]
+modR=lm(snapshot.2 ~ (snapshot.1+TP.S3+CYS.S3+ 
+                          CMI)^2,data=strain)
+step.backward = step(modR,direction="backward",k=log(nrow(strain)))
+summary(step.backward)
+
+```
 
 
 Selon le test d'BIC, on trouve le meilleur modèle modBIC2: 
@@ -201,7 +211,7 @@ Erreur de validation croisée:
 
 ```{r echo=FALSE}
 all.err=numeric(0)
-K=9
+K=6
 set.seed(11)
 n=nrow(CYS)
 taille=n%/%K
@@ -258,7 +268,7 @@ Erreur de validation croisée:
 
 ```{r echo=FALSE}
 all.err=numeric(0)
-K=9
+K=6
 set.seed(11)
 n=nrow(CYS)
 taille=n%/%K
@@ -301,7 +311,7 @@ Erreur de validation croisée:
 
 ```{r echo=FALSE}
 all.err=numeric(0)
-K=9
+K=6
 set.seed(11)
 n=nrow(CYS)
 taille=n%/%K
