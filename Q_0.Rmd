@@ -32,363 +32,204 @@ summary(Q0)
 ```
 
 ```{r}
-Q0[,'X4b']=Q0[,'X4ba']*1+Q0[,'X4bb']*2+Q0[,'X4bc']*3+Q0[,'X4bd']*4
+Q0[,'X4b']=Q0[,'X4ba']*4+Q0[,'X4bb']*3+Q0[,'X4bc']*2+Q0[,'X4bd']*1
 Q0$X4b
-Q0[,'X4a']=Q0[,'X4aa']*1+Q0[,'X4ab']*2+Q0[,'X4ac']*3+Q0[,'X4ad']*4
+Q0[,'X4a']=Q0[,'X4aa']*4+Q0[,'X4ab']*3+Q0[,'X4ac']*2+Q0[,'X4ad']*1
 Q0$X4a
-miss=which(Q0$X4a==0|Q0$X4b==0)
+Q0[,'X5a']=Q0[,'X5aa']*4+Q0[,'X5ab']*3+Q0[,'X5ac']*2+Q0[,'X5ad']*1
+Q0[,'X3c']=Q0[,'X3ca']*0+Q0[,'X3cb']*1+Q0[,'X3cc']*2+Q0[,'X3cd']*3+Q0[,'X3ce']*4
+miss=which(Q0$X4a==0|Q0$X4b==0|Q0$X4a==5|Q0$X4b==5|Q0$X5a==0|Q0$X5a==5)
 miss
-Q0_4=Q0[-miss,c('X4a','X4b')]
+Q0_3=Q0[,c('X3c','X2b')]
+Q0_3[,'X3b']=apply(Q0[,c('X3ba','X3bb','X3bc','X3bd','X3be')],1,max)
+Q0_3=Q0_3[,c('X3b','X3c')]
+Q0_3$X3b=factor(Q0_3$X3b,levels=c(1,0),labels=c("No","Yes"),ordered = TRUE)
+Q0_3$X3c=factor(Q0_3$X3c,levels=c(0,1,2,3,4),labels=c("0h","2h","5h","10h","20h"),ordered = TRUE)
+summary(Q0_3)
 
-Q0_4$X4a=as.factor(Q0_4$X4a,labels=c('very good','good','sufficient','bad'))
+Q0_4=Q0[-miss,c('X4a','X4b','X5a')]
+Q0_4$X4a=factor(Q0_4$X4a,levels=c(1,2,3,4),labels=c("bad","sufficient","good","very good"),ordered = TRUE)
+Q0_4$X4b=factor(Q0_4$X4b,levels=c(1,2,3,4),labels=c("bad","sufficient","good","very good"),ordered = TRUE)
+
+Q0_4$X5a=factor(Q0_4$X5a,levels=c(1,2,3,4),labels=c("no","maybe no","yes but with difficulty","yes"),ordered = TRUE)
 summary(Q0_4)
+str(Q0_4)
+
 ```
+
 
 
 ```{r}
-non_med[,"filiere"]="BIOMIP"
-non_med[which(non_med$Filiere=="EEA" & non_med$CMI=="non"),"filiere"]="EEA_non_CMI"
-non_med[which(non_med$Filiere=="EEA" & non_med$CMI=="oui"),"filiere"]="EEA_CMI"
-non_med$filiere=as.factor(non_med$filiere)
-summary(non_med[,-1])
-```
-
-
-
-On a trouvé que:
-
-- L'interaction entre CYS et CMI est importante: Un étudiant utilisant CYS progresse moins s' il est en CMI. En revanche, un étudiant n'utilisant pas CYS progresse plus s'il est en CMI.
-
-- L'interaction entre TP et CMI n'existe pas car il n'y a pas d'étudiant en CMI utilisant français pour les TPs.
-
-- L'interaction entre CYS et CMI existe: Un étudiant utilisant CYS progresse un peu plus s' il pratique les TPs en anglais. Or, un étudiant n'utilisant pas CYS progresse bien plus s'il  pratique les TPs en anglais.
-
-
-```{r echo=FALSE}
-library(lattice)
-gdURL <- "http://www.stat.ubc.ca/~jenny/notOcto/STAT545A/examples/gapminder/data/gapminderContinentColors.txt"
-(continentColors <- read.delim(file = gdURL, as.is = 3))
-coolNewPars <- 
-  list(superpose.symbol = list(pch = 21, cex = 2, col = "gray20",
-                               fill = continentColors$color))
-boxplot(snapshot.1~CYS.S4,data=med,names=c("Non","Oui"), 
-        ylab="Snapshot1 in S4")
-boxplot(snapshot.2~CYS.S4,data=med,names=c("Non","Oui"), 
-        ylab="Snapshot2 in S4")
-#plot(med$snapshot.1,med$snapshot.2,col=med$CYS.S4,lwd=8)
-xyplot(snapshot.2 ~ snapshot.1, group=CYS.S4, data=med, 
-       auto.key=list(space="right"),
-       scales = list(x = list(log = 10, equispaced.log = FALSE)),
-       jitter.x=TRUE, jitter.y=TRUE,par.settings = coolNewPars)
-```
-
-
-
-
-
-```{r echo=FALSE}
-boxplot(snapshot.1~filiere,data=non_med, 
-        ylab="Snapshot1 in S4")
-boxplot(snapshot.2~filiere,data=non_med, 
-        ylab="Snapshot2 in S4")
-
-xyplot(snapshot.2 ~ snapshot.1, group=filiere, data=non_med, 
-       auto.key=list(space="right"),
-       scales = list(x = list(log = 10, equispaced.log = FALSE)),
-       jitter.x=TRUE, jitter.y=TRUE,par.settings = coolNewPars)
-xyplot(snapshot.2 ~ snapshot.1, group=TP.S4, data=non_med, 
-       auto.key=list(space="right"), 
-       scales = list(x = list(log = 10, equispaced.log = FALSE)),
-       jitter.x=TRUE, jitter.y=TRUE,par.settings = coolNewPars)
-```
-
-
-```{r echo=FALSE}
-cross_table=table(non_med$TP.S4,non_med$filiere)
-evo=non_med$snapshot.2-non_med$snapshot.1
-interaction.plot(non_med$TP.S4,non_med$filiere,evo)
-```
-
-Selon les boxplots, on a trouvé le fait que:
-
-- Généralement, un étudiant en CMI a un note de Snapshot 1 moins élevé quand il  n'utilise pas l'outil CYS.
-
-- Parmi les étudiant non en CMI, ceux utilisant CYS prend des notes de Snapshot 2 moins élevés que ceux ne l'utilisant pas.
-```{r}
-write.csv(cross_table,'cross_table.csv')
-```
-
-
-
-
-# Modèle linéaire
-
-On commence à mener des modèle ANOVA pour étudier l'impact des facteurs CMI, CYS et la langue de TP sur l'évolution de résultat entre Snapshot 1 et Snapshot 2 en semestre 3
-
-## Medecine
-
-### Modèle ANCOVA de 1 facteur qualitative (CYS S4) et 1 facteur quantitative(Snapshot1)
-
-```{r echo=FALSE}
-# A completer
-modR=lm(snapshot.2 ~ (snapshot.1+CYS.S4)^2,data=med)
-summary(modR)
-modbest = step(modR,direction="backward")#,k=log(nrow(med)))
-summary(modbest)
-```
-```{r}
-plot(med$snapshot.1,med$snapshot.2,col=as.numeric(med$CYS.S4),xlab="snapshot.1",ylab="snapshot.2",asp=1)
-abline(modbest)
+colnames(Q0_3)=c('Playing','Playing time')
+summary(Q0_3)
 ```
 
 ```{r}
-ggplot(med[,c(1,2)])+geom_line()
+table(Q0_3$`Playing`,Q0_3$`Playing time`)
 ```
-
-## Non-medecine
-### Modèle ANCOVA de 3 facteur qualitative (CYS S4, TP S4 et filiere) et 1 facteur quantitative(Snapshot1)
 
 ```{r echo=FALSE}
-# A completer
-modR=lm(snapshot.2 ~ (snapshot.1+CYS.S4+TP.S4+filiere),data=non_med)
-summary(modR)
-modbest = step(modR,direction="backward",k=log(nrow(med)))
-summary(modbest)
-```
-
-
-
-
-On a décidé de modéliser la note de Snapshot2 en fonction de Snapshot1, l'utilisation de l'outil CheckYourSmile, la langue de TP et le fait que l'étudiant est en CMI ou pas.
-
-Alors, sous le modèle ANCOVA on a trouvé que les trois facteurs qualitatives ont des impactes sur le résultat Snapshot2. Or, le Snaphot1 a un gros effet sur le résultat de Snapshot2. On y trouve aussi un terme d'interaction entre la variable CYS.S3 et la variable CMI et celui dernier a un effet important négatif sur le Snapshot2.
-
-ie, un étudiant en CMI utilisant l'outil Check Your Smile a tendance de dégrader environ 2,6 points (-3,02652+0,43506) et un étudiant non CMI utilisant l'outil Check Your Smile a tendance de progresser environ 0,4 points (0,43506)
-
-
-On voit que le modèle ANCOVA nous donne un R-ajusté bien meilleur que le modèle ANOVA. (0,4615>>0,006 et 0,4615>>0,09)
-
-Pour le but d'obtenir une valeur de R plus élevé on va passer sous des modèles non linéaires
-
-Erreur de validation croisée:
-
-```{r echo=FALSE}
-all.err=numeric(0)
-K=2
-set.seed(11)
-n=nrow(med)
-taille=n%/%K
-set.seed(5)
-alea<-runif(n)
-rang=rank(alea)
-bloc=(rang-1)%/%taille+1
-bloc=as.factor(bloc)
-err=0
-for (k in 1:K){
-  dt=med[bloc==k,]
-  modk=lm(snapshot.2 ~ snapshot.1 ,data=med[bloc!=k,])
-  pred=predict(modk,newdata=dt)
-  xerr=sum((dt$snapshot.2-pred)^2)
-  err= err+xerr
-}
-print(err/((K+1)))
-```
-# Arbre binaire de décision
-
-```{r include=FALSE}
-library(rpart) # chargement de la librairie
+library(rpart)
 library(partykit)
+tree.q3=rpart(Playing~.,data=Q0_3,cp=0.0001)
+xmat3=xpred.rpart(tree.q3)
+xerr3=(xmat3!=as.numeric(Q0_3[,"Playing"]))^2
+CVerr3=apply(xerr3,2,sum)
+CVerr3
 ```
 
-En cas on veut construire un arbre de régression de la note Snapshot 2 en fonction d'autres variables
-## Medecin
 ```{r echo=FALSE}
-data1=med[,c(4,5,6)]
-tree.reg1=rpart(snapshot.2~.,data=data1,cp=0.0005)
-xmat1=xpred.rpart(tree.reg1)
-xerr1=(xmat1-data1[,"snapshot.2"])^2
-CVerr1=apply(xerr1,2,sum)
-print(CVerr1)
+tree.dis3=rpart(Playing~.,data=Q0_3,
+                control=rpart.control(cp=as.numeric(attributes(which.min(CVerr3))$names)))
+plot(as.party(tree.dis3), type="simple")
 ```
 
+```{r}
+Q0_3[,"X2b"]=Q0["X2b"]
+Q0_2=Q0_3[,c("Playing","X2b")]
+Q0_2$X2b=factor(Q0_2$X2b,levels=c(0,1),labels=c("No","Yes"))
+colnames(Q0_2)=c('Playing','Tablette')
 
-```{r echo=FALSE}
-data2=data1
-data2[,"eval"]=data2[,"snapshot.2"]-data2[,"snapshot.1"]
-data2=data2[,-c(1,2)]
-```
-
-
-
-```{r echo=FALSE}
-tree.reg1=rpart(snapshot.2~.,data=data1,
-                control=rpart.control(cp=as.numeric(attributes(which.min(CVerr1))$names)))
-plot(as.party(tree.reg1), type="simple")
+summary(Q0_2)
 ```
 
 
-Erreur de validation croisée:
+```{r}
+table(Q0_2$Tablette,Q0_2$Playing)
+```
 
-```{r echo=FALSE}
-all.err=numeric(0)
-K=2
-set.seed(11)
-n=nrow(med)
-taille=n%/%K
-set.seed(5)
-alea<-runif(n)
-rang=rank(alea)
-bloc=(rang-1)%/%taille+1
-bloc=as.factor(bloc)
-err=0
-for (k in 1:K){
-  dt=data1[bloc==k,]
-  modk=rpart(snapshot.2 ~ .,data=data1[bloc!=k,],
-             control=rpart.control(cp=as.numeric(attributes(which.min(CVerr1))$names)))
-  pred=predict(modk,newdata=dt)
-  xerr=sum((dt$snapshot.2-pred)^2)
-  err= err+xerr
-}
-print(err/(K+1))
+
+```{r}
+Q0_4[,'X6a1']=Q0[-miss,'X6a1a']
+Q0_4$X6a1=as.factor(Q0_4$X6a1)
+summary(Q0_4$X6a1)
+colnames(Q0_4)=c('Electronics','English','E_learning_possibility','E_learning_experience')
 ```
 
 
 
+
+
+
+
+
+
+
+
+```{r}
+set.seed(100) # initialisation du générateur
+# Extraction des échantillons
+test.ratio=.2   # part de l'échantillon test
+npop=nrow(Q0_4) # nombre de lignes dans les données
+nvar=ncol(Q0_4) # nombre de colonnes
+# taille de l'échantillon test
+ntest=ceiling(npop*test.ratio) 
+# indices de l'échantillon test
+testi=sample(1:npop,ntest)
+# indices de l'échantillon d'apprentissage
+appri=setdiff(1:npop,testi)
+```
+
+```{r}
+
+# construction de l'échantillon d'apprentissage
+datappq=Q0_4[appri,]
+# construction de l'échantillon test 
+datestq=Q0_4[testi,] 
+summary(datappq) # vérification
+```
+
+
+
+```{r}
+table(Q0_4$Electronics,Q0_4$English)
+```
+
+
+
 ```{r echo=FALSE}
-tree.reg2=rpart(eval~.,data=data2,cp=0.0001)
-xmat2=xpred.rpart(tree.reg2)
-xerr2=(xmat2-data2[,"eval"])^2
-CVerr2=apply(xerr2,2,sum)
-CVerr2
+library(rpart)
+library(partykit)
+tree.q5=rpart(E_learning_possibility~.,data=datappq,cp=0.0001)
+plot(as.party(tree.q5),type='simple')
+xmat5=xpred.rpart(tree.q5)
+xerr5=(xmat5!=as.numeric(datappq[,"E_learning_possibility"]))^2
+CVerr5=apply(xerr5,2,sum)
+CVerr5
 ```
 
 
 En cas on veut construire un arbre de régression de l'évolution de la note en fonction d'autres variables
 
 ```{r echo=FALSE}
-tree.reg2=rpart(eval~.,data=data2,
-                control=rpart.control(cp=as.numeric(attributes(which.min(CVerr2))$names)))
-plot(as.party(tree.reg2), type="simple")
+tree.dis5=rpart(E_learning_possibility~.,data=datappq,
+                control=rpart.control(cp=as.numeric(attributes(which.min(CVerr5))$names)))
+plot(as.party(tree.dis5), type="simple")
 ```
 
-Erreur de validation croisée:
-
-```{r echo=FALSE}
-all.err=numeric(0)
-K=2
-set.seed(11)
-n=nrow(med)
-taille=n%/%K
-set.seed(5)
-alea<-runif(n)
-rang=rank(alea)
-bloc=(rang-1)%/%taille+1
-bloc=as.factor(bloc)
-err=0
-for (k in 1:K){
-  dt=data2[bloc==k,]
-  modk=rpart(eval ~ .,data=data2[bloc!=k,],
-             control=rpart.control(cp=as.numeric(attributes(which.min(CVerr2))$names)))
-  pred=predict(modk,newdata=dt)
-  xerr=sum((dt$eval-pred)^2)
-  err= err+xerr
-}
-print(err/(K+1))
+```{r}
+# Calcul des prévisions
+pred.treeq5=predict(tree.dis5,newdata=datestq,type="class") 
+# Erreur quadratique moyenne de prévision en régression
+sum((as.numeric(pred.treeq5)!=as.numeric(datestq[,"E_learning_possibility"])))/nrow(datestq)
 ```
 
-
-## Non medecin
-
-```{r echo=FALSE}
-data3=non_med[,c(4,5,6,7,9)]
-tree.reg3=rpart(snapshot.2~.,data=data3,cp=0.0001)
-xmat3=xpred.rpart(tree.reg3)
-xerr3=(xmat3-data3[,"snapshot.2"])^2
-CVerr3=apply(xerr3,2,sum)
-print(CVerr3)
-```
-
-
-```{r echo=FALSE}
-data4=data3
-data4[,"eval"]=data4[,"snapshot.2"]-data4[,"snapshot.1"]
-data4=data4[,-c(1,2)]
+```{r}
+table(pred.treeq5,datestq[,"E_learning_possibility"])
 ```
 
 
 
-```{r echo=FALSE}
-tree.reg3=rpart(snapshot.2~.,data=data3,
-                control=rpart.control(cp=as.numeric(attributes(which.min(CVerr3))$names)))
-plot(as.party(tree.reg3), type="simple")
-```
 
-
-Erreur de validation croisée:
-
-```{r echo=FALSE}
-all.err=numeric(0)
-K=2
-set.seed(11)
-n=nrow(non_med)
-taille=n%/%K
-set.seed(5)
-alea<-runif(n)
-rang=rank(alea)
-bloc=(rang-1)%/%taille+1
-bloc=as.factor(bloc)
-err=0
-for (k in 1:K){
-  dt=data3[bloc==k,]
-  modk=rpart(snapshot.2 ~ .,data=data3[bloc!=k,],
-             control=rpart.control(cp=as.numeric(attributes(which.min(CVerr3))$names)))
-  pred=predict(modk,newdata=dt)
-  xerr=sum((dt$snapshot.2-pred)^2)
-  err= err+xerr
-}
-print(err/(K+1))
-```
-
-
-
-```{r echo=FALSE}
-tree.reg4=rpart(eval~.,data=data4,cp=0.009)
-xmat4=xpred.rpart(tree.reg4)
-xerr4=(xmat4-data4[,"eval"])^2
+```{r}
+tree.q4=rpart(English~.,data=datappq,cp=0.001)
+plot(as.party(tree.q4),type='simple')
+xmat4=xpred.rpart(tree.q4)
+xerr4=(xmat4!=as.numeric(datappq[,"English"]))^2
 CVerr4=apply(xerr4,2,sum)
 CVerr4
 ```
 
 
-En cas on veut construire un arbre de régression de l'évolution de la note en fonction d'autres variables
+
 
 ```{r echo=FALSE}
-tree.reg4=rpart(eval~.,data=data4,
+tree.dis4=rpart(English~.,data=datappq,
                 control=rpart.control(cp=as.numeric(attributes(which.min(CVerr4))$names)))
-plot(as.party(tree.reg4), type="simple")
+plot(as.party(tree.dis4), type="simple")
 ```
 
-Erreur de validation croisée:
 
-```{r echo=FALSE}
-all.err=numeric(0)
-K=2
-set.seed(11)
-n=nrow(med)
-taille=n%/%K
-set.seed(5)
-alea<-runif(n)
-rang=rank(alea)
-bloc=(rang-1)%/%taille+1
-bloc=as.factor(bloc)
-err=0
-for (k in 1:K){
-  dt=data2[bloc==k,]
-  modk=rpart(eval ~ .,data=data2[bloc!=k,],
-             control=rpart.control(cp=as.numeric(attributes(which.min(CVerr2))$names)))
-  pred=predict(modk,newdata=dt)
-  xerr=sum((dt$eval-pred)^2)
-  err= err+xerr
-}
-print(err/(K+1))
+
+```{r}
+# Calcul des prévisions
+pred.treeq4=predict(tree.dis4,newdata=datestq,type="class") 
+# Erreur quadratique moyenne de prévision en régression
+sum((as.numeric(pred.treeq4)!=as.numeric(datestq[,"English"])))/nrow(datestq)
 ```
+
+
+
+
+```{r}
+table(pred.treeq4,datestq[,"English"])
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

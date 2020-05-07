@@ -30,7 +30,10 @@ library(ggplot2)
 CYS = read.csv("DonneeS3_filtre.csv")
 dif_snap=CYS$snapshot.2-CYS$snapshot.1
 ratio_snap=CYS$snapshot.2/CYS$snapshot.1
-summary(CYS)
+summary(CYS[,2:11])
+write.table(summary(CYS[,2:11]), file = "summaryS3.txt", sep = "\t",
+             row.names = TRUE)
+write.csv(summary(CYS[,2:11]), file = "summaryS3.csv")
 ```
 
 
@@ -120,7 +123,6 @@ On commence à mener des modèle ANOVA pour étudier l'impact des facteurs CMI, 
 mod1=lm(dif_snap~(CYS$CYS.S3+CYS$TP.S3+ CYS$CMI)^2,data=CYS)
 #step.backward = step(mod1)
 modBIC1=lm(dif_snap ~ CYS$CYS.S3 + CYS$CMI + CYS$CYS.S3:CYS$CMI,data=CYS)
-summary(modBIC1)
 ```
 
 
@@ -132,6 +134,7 @@ summary(modBIC1)
 mod2=lm(ratio_snap~(CYS$CYS.S3+CYS$TP.S3+ CYS$CMI)^2,data=CYS)
 #step.backward = step(mod2,direction="backward",k=log(nrow(CYS)))
 modBIC2=lm(ratio_snap ~ CYS$CMI,data=CYS)
+summary(modBIC1)
 summary(modBIC2)
 ```
 

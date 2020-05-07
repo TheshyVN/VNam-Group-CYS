@@ -1,0 +1,119 @@
+---
+title: "Q_2"
+author: "Viet Minh Thong Le- Dinh Triem Phan"
+date: "05/05/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r echo=FALSE, r,echo=F}
+library(ggplot2)
+library(gridExtra)
+library(ggfortify)
+library(leaps)
+library(MASS)
+library(ggplot2)
+```
+
+# Etude des données 
+
+
+```{r}
+Q2 = read.csv("Q_2.csv")
+```
+
+
+```{r}
+Q2_1 = Q2[,c("A2a","A2b","A2c","A2d","A2e","A2f")]
+summary(Q2_1)
+gameper=apply(Q2_1[,c(1:6)],2,mean)
+gameper[6]=mean(Q2_1$A2f,na.rm=TRUE)
+print(gameper)
+```
+
+
+
+```{r}
+Q2_5=Q2[,c("A1a","A1b","A1c","A1d","A2a","A2b","A2c","A2d","A2e","A2f","X5a","X5b","X5c","X5d")]
+Q2_5[is.na(Q2_5)]=0
+Q2_5[,'A1']=Q2_5[,'A1a']*0+Q2_5[,'A1b']*1+Q2_5[,'A1c']*2+Q2_5[,'A1d']*3
+Q2_5$A2a=factor(Q2_5$A2a,levels=c(0,1),labels=c("No","Yes"))
+Q2_5$A2b=factor(Q2_5$A2b,levels=c(0,1),labels=c("No","Yes"))
+Q2_5$A2c=factor(Q2_5$A2c,levels=c(0,1),labels=c("No","Yes"))
+Q2_5$A2d=factor(Q2_5$A2d,levels=c(0,1),labels=c("No","Yes"))
+Q2_5$A2e=factor(Q2_5$A2e,levels=c(0,1),labels=c("No","Yes"))
+Q2_5$A2f=factor(Q2_5$A2f,levels=c(0,1),labels=c("No","Yes"))
+Q2_5$A1=factor(Q2_5$A1,levels=c(0,1,2,3),labels=c("once","less_5","5to10","more_10"))
+Q2_5[,'A5']=Q2_5[,'X5a']*0+Q2_5[,'X5b']*1+Q2_5[,'X5c']*2+Q2_5[,'X5d']*3
+Q2_5$A5=factor(Q2_5$A5,levels=c(0,1,2,3),labels=c("positive","negative","average","no_idea"))
+Q2_5=Q2_5[,c(5:10,15,16)]
+colnames(Q2_5)=c("Pendu","Audiowords","Check_your_motus","QCM","Check_your_taboo","Flashcards","frequency","satisfied")
+summary(Q2_5)
+```
+
+
+```{r}
+set.seed(100) # initialisation du générateur
+# Extraction des échantillons
+test.ratio=.2   # part de l'échantillon test
+npop=nrow(Q2_5) # nombre de lignes dans les données
+nvar=ncol(Q2_5) # nombre de colonnes
+# taille de l'échantillon test
+ntest=ceiling(npop*test.ratio) 
+# indices de l'échantillon test
+testi=sample(1:npop,ntest)
+# indices de l'échantillon d'apprentissage
+appri=setdiff(1:npop,testi)
+```
+
+```{r}
+
+# construction de l'échantillon d'apprentissage
+datappq=Q2_5[appri,]
+# construction de l'échantillon test 
+datestq=Q2_5[testi,] 
+summary(datappq) # vérification
+```
+
+
+
+
+```{r echo=FALSE}
+library(rpart)
+library(partykit)
+tree.q5=rpart(satisfied~.,data=datappq,cp=0.0001)
+xmat5=xpred.rpart(tree.q5)
+xerr5=(xmat5!=as.numeric(datappq[,"satisfied"]))^2
+CVerr5=apply(xerr5,2,sum)
+CVerr5
+```
+
+
+
+
+```{r echo=FALSE}
+tree.dis5=rpart(satisfied~.,data=datappq,
+                control=rpart.control(cp=as.numeric(attributes(which.min(CVerr5))$names)))
+plot(as.party(tree.dis5), type="simple")
+```
+
+```{r}
+# Calcul des prévisions
+pred.treeq5=predict(tree.dis5,newdata=datestq,type="class") 
+# Erreur quadratique moyenne de prévision en régression
+sum((as.numeric(pred.treeq5)!=as.numeric(datestq[,"satisfied"])))/nrow(datestq)
+```
+
+```{r}
+table(pred.treeq5,datestq[,"satisfied"])
+```
+
+
+
+
+
+

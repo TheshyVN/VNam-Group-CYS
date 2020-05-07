@@ -28,7 +28,7 @@ library(ggplot2)
 
 ```{r}
 CYS = read.csv("semestre4.csv")
-summary(CYS)
+summary(CYS[,-1])
 ```
 
 
@@ -46,10 +46,10 @@ En fait, en semestre 3, on effectue un bilan compris de 72 étudiants dont:
 
 ```{r}
 med=CYS[which(CYS$Filiere=="Medecine"),]
-summary(med)
 non_med=CYS[which(CYS$Filiere!="Medecine"),]
 non_med$TP.S4=as.factor(as.character(non_med$TP.S4))
-summary(non_med)
+summary(non_med[,-1])
+summary(med[,-1])
 ```
 
 
@@ -58,7 +58,7 @@ non_med[,"filiere"]="BIOMIP"
 non_med[which(non_med$Filiere=="EEA" & non_med$CMI=="non"),"filiere"]="EEA_non_CMI"
 non_med[which(non_med$Filiere=="EEA" & non_med$CMI=="oui"),"filiere"]="EEA_CMI"
 non_med$filiere=as.factor(non_med$filiere)
-summary(non_med)
+summary(non_med[,-1])
 ```
 
 
@@ -73,48 +73,63 @@ On a trouvé que:
 
 
 ```{r echo=FALSE}
-boxplot(snapshot.1~CYS.S4,data=med,names=c("Non utilisé","Utilisé"), 
-        ylab="Résultat Snapshot1 en S4", 
-        main=" Résultat Snapshot1 en S4 selon CYS en S4 pour les medecins")
-boxplot(snapshot.2~CYS.S4,data=med,names=c("Non utilisé","Utilisé"), 
-        ylab="Résultat Snapshot2 en S4", 
-        main=" Résultat Snapshot2 en S4 selon CYS en S4 pour les medecins")
-plot(med$snapshot.1,med$snapshot.2,col=as.numeric(med$CYS.S4))
+library(lattice)
+gdURL <- "http://www.stat.ubc.ca/~jenny/notOcto/STAT545A/examples/gapminder/data/gapminderContinentColors.txt"
+(continentColors <- read.delim(file = gdURL, as.is = 3))
+coolNewPars <- 
+  list(superpose.symbol = list(pch = 21, cex = 2, col = "gray20",
+                               fill = continentColors$color))
+boxplot(snapshot.1~CYS.S4,data=med,names=c("Non","Oui"), 
+        ylab="Snapshot1 in S4")
+boxplot(snapshot.2~CYS.S4,data=med,names=c("Non","Oui"), 
+        ylab="Snapshot2 in S4")
+#plot(med$snapshot.1,med$snapshot.2,col=med$CYS.S4,lwd=8)
+xyplot(snapshot.2 ~ snapshot.1, group=CYS.S4, data=med, 
+       auto.key=list(space="right"),
+       scales = list(x = list(log = 10, equispaced.log = FALSE)),
+       jitter.x=TRUE, jitter.y=TRUE,par.settings = list(superpose.symbol = list(pch = 19, cex = 1.5,
+                                                   col = c("orange", "blue"))))
 ```
+
+
 
 
 
 ```{r echo=FALSE}
 boxplot(snapshot.1~filiere,data=non_med, 
-        ylab="Résultat Snapshot1 en S4", 
-        main=" Résultat Snapshot1 en S4 selon filiere en S4 ")
+        ylab="Snapshot1 in S4")
 boxplot(snapshot.2~filiere,data=non_med, 
-        ylab="Résultat Snapshot2 en S4", 
-        main=" Résultat Snapshot2 en S4 selon filiere en S4 ")
-plot(non_med$snapshot.1,non_med$snapshot.2,col=as.numeric(non_med$filiere))
-plot(non_med$snapshot.1,non_med$snapshot.2,col=as.numeric(non_med$TP.S4))
+        ylab="Snapshot2 in S4")
+
+xyplot(snapshot.2 ~ snapshot.1, group=filiere, data=non_med, 
+       auto.key=list(space="right"),
+       scales = list(x = list(log = 10, equispaced.log = FALSE)),
+       jitter.x=TRUE, jitter.y=TRUE,par.settings = list(superpose.symbol = list(pch = 19, cex = 1.5,
+                                                   col = c("black", "blue","red"))))
+xyplot(snapshot.2 ~ snapshot.1, group=TP.S4, data=non_med, 
+       auto.key=list(space="right"), 
+       scales = list(x = list(log = 10, equispaced.log = FALSE)),
+       jitter.x=TRUE, jitter.y=TRUE,par.settings = list(superpose.symbol = list(pch = 19, cex = 1.5,
+                                                   col = c("orange", "blue"))))
 ```
 
+
+```{r echo=FALSE}
+cross_table=table(non_med$TP.S4,non_med$filiere)
+evo=non_med$snapshot.2-non_med$snapshot.1
+interaction.plot(non_med$TP.S4,non_med$filiere,evo)
+```
 
 Selon les boxplots, on a trouvé le fait que:
 
 - Généralement, un étudiant en CMI a un note de Snapshot 1 moins élevé quand il  n'utilise pas l'outil CYS.
 
 - Parmi les étudiant non en CMI, ceux utilisant CYS prend des notes de Snapshot 2 moins élevés que ceux ne l'utilisant pas.
-
-On va étudier pour ce cas l'évolution de résultat
-
-
-```{r echo=FALSE}
-CMIoui=CYS[CYS$CMI=="oui",]
-CMIoui[,"evo"]=CMIoui[,"snapshot.2"]-CMIoui[,"snapshot.1"]
-boxplot(evo~CYS.S3,data=CMIoui,names=c("Non utilisé","Utilisé"), 
-        ylab="Résultat Snapshot1 en S3", 
-        main=" Evolution de résultat en S3 selon l'utilisation de CYS en S3 pour les CMI")
+```{r}
+write.csv(cross_table,'cross_table.csv')
 ```
 
 
-Ainsi, les étudiant en CMI progressent mieux quand ils n'utilisent pas CYS.
 
 
 # Modèle linéaire
@@ -133,14 +148,17 @@ modbest = step(modR,direction="backward")#,k=log(nrow(med)))
 summary(modbest)
 ```
 ```{r}
-plot(med$snapshot.1,med$snapshot.2,col=as.numeric(med$CYS.S4))
+plot(med$snapshot.1,med$snapshot.2,col=as.numeric(med$CYS.S4),xlab="snapshot.1",ylab="snapshot.2",asp=1)
 abline(modbest)
+legend(1, 95, legend=c("Line 1", "Line 2"),
+       col=c("red", "blue"), lty=1:2, cex=0.8)
 ```
 
+```{r}
+ggplot(med[,c(1,2)])+geom_line()
+```
 
-Ce modèle n'est pas bon car la valeur R-squared est trop petite.
-
-## Non-edecine
+## Non-medecine
 ### Modèle ANCOVA de 3 facteur qualitative (CYS S4, TP S4 et filiere) et 1 facteur quantitative(Snapshot1)
 
 ```{r echo=FALSE}
