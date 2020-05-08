@@ -117,3 +117,92 @@ table(pred.treeq5,datestq[,"satisfied"])
 
 
 
+```{r}
+Q2_5t=Q2_5
+Q2_5t[,"X1B"]=Q2[,"X1B"]
+
+Q2_5t=Q2_5t[-which(is.na(Q2_5t$X1B)),]
+colnames(Q2_5t)=c("Pendu","Audiowords","Check_your_motus","QCM","Check_your_taboo","Flashcards","frequency","satisfied","Time_CYS")
+summary(Q2_5t)
+```
+
+
+
+
+
+
+
+
+
+
+```{r}
+set.seed(320) # initialisation du générateur
+# Extraction des échantillons
+test.ratio=.2   # part de l'échantillon test
+npop=nrow(Q2_5t) # nombre de lignes dans les données
+nvar=ncol(Q2_5t) # nombre de colonnes
+# taille de l'échantillon test
+ntest=ceiling(npop*test.ratio) 
+# indices de l'échantillon test
+testi=sample(1:npop,ntest)
+# indices de l'échantillon d'apprentissage
+appri=setdiff(1:npop,testi)
+```
+
+```{r}
+
+# construction de l'échantillon d'apprentissage
+datappq=Q2_5t[appri,]
+# construction de l'échantillon test 
+datestq=Q2_5t[testi,] 
+summary(datappq) # vérification
+```
+
+
+
+
+
+```{r}
+mean(Q2_5t$Time_CYS)
+hist(Q2_5t$Time_CYS,xlab="Time spent on CYS(hours)",ylab="Number of students",main="Histogram")
+```
+
+
+
+```{r}
+tree.q5t=rpart(satisfied~.,data=datappq,cp=0.0001)
+xmat5t=xpred.rpart(tree.q5t)
+xerr5t=(xmat5t!=as.numeric(datappq[,"satisfied"]))^2
+CVerr5t=apply(xerr5t,2,sum)
+CVerr5t
+```
+
+
+
+```{r echo=FALSE}
+tree.dis5t=rpart(satisfied~.,data=datappq,
+                control=rpart.control(cp=as.numeric(attributes(which.min(CVerr5t))$names)))
+plot(as.party(tree.dis5t), type="simple")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

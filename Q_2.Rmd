@@ -57,7 +57,7 @@ summary(Q2_7)
 
 
 ```{r}
-set.seed(152) # initialisation du générateur
+set.seed(33) # initialisation du générateur
 # Extraction des échantillons
 test.ratio=.2   # part de l'échantillon test
 npop=nrow(Q2_7) # nombre de lignes dans les données
@@ -102,9 +102,84 @@ plot(as.party(tree.dis7), type="simple")
 ```
 
 
+```{r}
+Q2_7t=Q2_7
+Q2_7t[,"X1B"]=Q2[,"X1B"]
+
+Q2_7t=Q2_7t[-which(is.na(Q2_7t$X1B)),]
+colnames(Q2_7t)=c("Pendu","Audiowords","Check_your_motus","QCM","Check_your_taboo","Flashcards","frequency","achieved","Time_CYS")
+summary(Q2_7t)
+```
 
 
 
+
+
+
+
+
+
+
+```{r}
+set.seed(340) # initialisation du générateur
+# Extraction des échantillons
+test.ratio=.2   # part de l'échantillon test
+npop=nrow(Q2_7t) # nombre de lignes dans les données
+nvar=ncol(Q2_7t) # nombre de colonnes
+# taille de l'échantillon test
+ntest=ceiling(npop*test.ratio) 
+# indices de l'échantillon test
+testi=sample(1:npop,ntest)
+# indices de l'échantillon d'apprentissage
+appri=setdiff(1:npop,testi)
+```
+
+```{r}
+
+# construction de l'échantillon d'apprentissage
+datappq=Q2_7t[appri,]
+# construction de l'échantillon test 
+datestq=Q2_7t[testi,] 
+summary(datappq) # vérification
+```
+
+
+
+
+
+```{r}
+mean(Q2_7t$Time_CYS)
+hist(Q2_7t$Time_CYS,xlab="Time spent on CYS(hours)",ylab="Number of students",main="Histogram")
+```
+
+
+
+```{r}
+tree.q7t=rpart(achieved~.,data=datappq,cp=0.0001)
+xmat7t=xpred.rpart(tree.q7t)
+xerr7t=(xmat7t!=as.numeric(datappq[,"achieved"]))^2
+CVerr7t=apply(xerr7t,2,sum)
+CVerr7t
+```
+
+
+
+```{r echo=FALSE}
+tree.dis7t=rpart(achieved~.,data=datappq,
+                control=rpart.control(cp=as.numeric(attributes(which.min(CVerr7t))$names)))
+plot(as.party(tree.dis7t), type="simple")
+```
+
+```{r}
+# Calcul des prévisions
+pred.treeq7t=predict(tree.dis7t,newdata=datestq,type="class") 
+# Erreur quadratique moyenne de prévision en régression
+sum((as.numeric(pred.treeq7t)!=as.numeric(datestq[,"achieved"])))/nrow(datestq)
+```
+
+```{r}
+table(pred.treeq7t,datestq[,"achieved"])
+```
 
 
 
