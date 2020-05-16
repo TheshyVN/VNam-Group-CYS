@@ -1,0 +1,397 @@
+---
+title: "Rapport CYS"
+output:
+  pdf_document:
+    toc: yes
+  html_document:
+    number_sections: yes
+    toc: yes
+    toc_float: yes
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r echo=FALSE, r,echo=F}
+library(ggplot2)
+library(gridExtra)
+library(ggfortify)
+library(leaps)
+library(MASS)
+library(ggplot2)
+```
+
+# Etude des données 
+
+
+```{r}
+CYS = read.csv("DonneeS3_filtre.csv")
+dif_snap=CYS$snapshot.2-CYS$snapshot.1
+ratio_snap=CYS$snapshot.2/CYS$snapshot.1
+summary(CYS[,2:11])
+write.table(summary(CYS[,2:11]), file = "summaryS3.txt", sep = "\t",
+             row.names = TRUE)
+write.csv(summary(CYS[,2:11]), file = "summaryS3.csv")
+```
+```{r}
+library(xtable)
+xtable(summary(CYS[,c(2:5,7,9,11)],))
+```
+
+
+En fait, en semestre 3, on effectue un bilan compris de 181 étudiants dont:
+
+- 38 en 2017-2018 et 143 en 2018-2019
+
+- Tout 181 en filière EEA
+
+- 120 utilisent l'outil CYS et 41 ne l'utilisent pas
+
+- 132 font des TPs en français et 49 les font en anglais
+
+- 160 sont en CMI alors que 31 n'y sont pas 
+
+Tableau croisé de 2 variables CMI et TP.S3
+
+```{r echo=FALSE}
+evo=CYS$snapshot.2-CYS$snapshot.1
+table(CYS$TP.S3,CYS$CMI)
+interaction.plot(CYS$CMI,CYS$CYS.S3,evo,ylim=c(2,4))
+interaction.plot(CYS$CMI,CYS$TP.S3,evo,ylim=c(2,4))
+interaction.plot(CYS$TP.S3,CYS$CYS.S3,evo,ylim=c(2,4))
+```
+
+On a trouvé que:
+
+- L'interaction entre CYS et CMI est importante: Un étudiant utilisant CYS progresse moins s' il est en CMI. En revanche, un étudiant n'utilisant pas CYS progresse plus s'il est en CMI.
+
+- L'interaction entre TP et CMI n'existe pas car il n'y a pas d'étudiant en CMI utilisant français pour les TPs.
+
+- L'interaction entre CYS et CMI existe: Un étudiant utilisant CYS progresse un peu plus s' il pratique les TPs en anglais. Or, un étudiant n'utilisant pas CYS progresse bien plus s'il  pratique les TPs en anglais.
+
+
+```{r echo=FALSE}
+CMInon=CYS[CYS$CMI=="non",]
+boxplot(snapshot.1~CYS.S3,data=CMInon,names=c("Non","Oui"), 
+        ylab="Snapshot1 in S3",ylim=c(0,16))
+
+boxplot(snapshot.2~CYS.S3,data=CMInon,names=c("Non","Oui"), 
+        ylab="Snapshot2 in S3",ylim=c(0,16))
+```
+
+Selon les boxplots, on a trouvé le fait que:
+
+- Généralement, un étudiant non en CMI a un note de Snapshot 1 plus élevé quand il  n'utilise pas l'outil CYS.
+
+- Pourtant,parmi les étudiant non en CMI, ceux utilisant CYS prend des notes de Snapshot 2 plus élevés que ceux ne l'utilisant pas.
+
+On a observé ici une éfficacité de l'outil CYS appliqués sur les étudiant non en CMI
+
+```{r echo=FALSE}
+CMIoui=CYS[CYS$CMI=="oui",]
+boxplot(snapshot.1~CYS.S3,data=CMIoui,names=c("Non","Oui"), 
+        ylab="Snapshot1 in S3",ylim=c(4,16))
+boxplot(snapshot.2~CYS.S3,data=CMIoui,names=c("Non","Oui"), 
+        ylab="Snapshot2 in S3",ylim=c(4,16))
+```
+
+
+Selon les boxplots, on a trouvé le fait que:
+
+- Généralement, un étudiant en CMI a un note de Snapshot 1 moins élevé quand il  n'utilise pas l'outil CYS.
+
+- Parmi les étudiant non en CMI, ceux utilisant CYS prend des notes de Snapshot 2 moins élevés que ceux ne l'utilisant pas.
+
+On va étudier pour ce cas l'évolution de résultat
+
+
+```{r echo=FALSE}
+CMIoui=CYS[CYS$CMI=="oui",]
+CMIoui[,"evo"]=CMIoui[,"snapshot.2"]-CMIoui[,"snapshot.1"]
+boxplot(evo~CYS.S3,data=CMIoui,names=c("Non","Oui"), 
+        ylab="Evolution in S3")
+```
+
+
+Ainsi, les étudiant en CMI progressent mieux quand ils n'utilisent pas CYS.
+
+
+# Modèle linéaire
+
+On commence à mener des modèle ANOVA pour étudier l'impact des facteurs CMI, CYS et la langue de TP sur l'évolution de résultat entre Snapshot 1 et Snapshot 2 en semestre 3
+
+## Modèle ANOVA à 3 facteurs
+
+```{r}
+mod1=lm(dif_snap~(CYS$CYS.S3+CYS$TP.S3+ CYS$CMI)^2,data=CYS)
+#step.backward = step(mod1)
+modBIC1=lm(dif_snap ~ CYS$CYS.S3 + CYS$CMI + CYS$CYS.S3:CYS$CMI,data=CYS)
+```
+
+
+
+
+
+```{r}
+# A completer
+mod2=lm(ratio_snap~(CYS$CYS.S3+CYS$TP.S3+ CYS$CMI)^2,data=CYS)
+#step.backward = step(mod2,direction="backward",k=log(nrow(CYS)))
+modBIC2=lm(ratio_snap ~ CYS$CMI,data=CYS)
+summary(modBIC1)
+sink("anova_diff.txt")
+print(summary(modBIC1))
+sink()
+summary(modBIC2)
+sink("anova_ratio.txt")
+print(summary(modBIC2))
+sink()
+```
+
+En applquant le critère BIC sur le modèle complet, on trouve le modèle "modBIC2", où on ne trouve pas l'impacte de la langue de TP:
+
+- Quand on considère la différence entre 2 snapshots on obitent le modèle modBIC1 sous lequel cette différence dépend de l'utilisation de CYS, le fait d'étre en CMI et un terme d'interaction entre ces deux derniers.
+
+- Quand on considère la ratio entre 2 snapshots on obitent le modèle modBIC2 sous lequel cette ratio ne dépend que du fait d'étre en CMI .
+
+Pourtant on a les valeurs R-ajustées trop petites (inférieure à 0.1) donc on a décidé d'aller plus loin vers le modèle ANCOVA
+
+## Modèle ANCOVA de 3 facteurs qualitatives (CYS S3, CMI, TP S3) et 1 facteur quantitative(Snapshot1)
+
+```{r echo=FALSE}
+# A completer
+modR=lm(CYS$snapshot.2 ~ (CYS$snapshot.1+CYS$TP.S3+CYS$CYS.S3+ CYS$CMI)^2,data=CYS)
+#step.backward = step(modR,direction="backward",k=log(nrow(CYS)))
+modbest=lm(CYS$snapshot.2 ~ CYS$snapshot.1 + CYS$TP.S3 + CYS$CYS.S3 + CYS$CMI + 
+    CYS$CYS.S3:CYS$CMI,data=CYS)
+summary(modbest)
+sink("ancova3.txt")
+print(summary(modbest))
+sink()
+```
+```{r}
+ratio=1/3
+nr=nrow(CYS)
+ntest=ceiling(nr*ratio)
+testi=sample(1:nr,ntest)
+#print(testi)
+appri=setdiff(1:nr,testi)
+strain=CYS[appri,]
+stest=CYS[testi,]
+modR=lm(snapshot.2 ~ (snapshot.1+TP.S3+CYS.S3+ 
+                          CMI)^2,data=strain)
+step.backward = step(modR,direction="backward",k=log(nrow(strain)))
+summary(step.backward)
+```
+
+
+Selon le test d'BIC, on trouve le meilleur modèle modBIC2: 
+
+$CYS\$snapshot.2 \sim CYS\$snapshot.1 + CYS\$TP.S3 + CYS\$CYS.S3 + CYS\$CMI + CYS\$CYS.S3:CYS\$CMI$
+
+En fait, on veut estimer le résultat de Snapshot2 par le modèle:
+$$
+(modbest): Snapshot2_{ijkl}  = \mu + \alpha Snapshot1_{ijkl} + \beta_{i} + \gamma_j + \theta_k + \delta_{jk} +\varepsilon_{ijkl},\, \forall i=1, \, 2,\, \forall j=1,2, \forall k=1,2
+$$
+où:
+
+i,j,k sont les indices de modalité pour les variables qualitatives TP.S3, CYS.S3 et CMI, respectivement.(1 pour la réponse Non et 2 pour la réponse Oui, dans le cas de TP 1 pour FR et 2 pour GB)
+
+L'indice ijkl est pour indiquer l'individu l-ième ayant des modalités i,j,k pour TP.S3, CYS.S3 et CMI, respectivement. 
+$\varepsilon_{ijkl}$ est des erreurs de l'estimation de l'individu ayant l'indice ijkl.
+
+D'où:
+$$
+\mu=4.62384 \\
+\alpha=0.56912\\
+\beta_{1}= \gamma_1 = \theta_1 = \delta_{11}= \delta_{12}== \delta_{21}=0\\
+\beta_{2}=1.90361\\
+\gamma_2=0.43506\\
+\delta_{22}=-3.02652
+$$
+
+
+On a décidé de modéliser la note de Snapshot2 en fonction de Snapshot1, l'utilisation de l'outil CheckYourSmile, la langue de TP et le fait que l'étudiant est en CMI ou pas.
+
+Alors, sous le modèle ANCOVA on a trouvé que les trois facteurs qualitatives ont des impactes sur le résultat Snapshot2. Or, le Snaphot1 a un gros effet sur le résultat de Snapshot2. On y trouve aussi un terme d'interaction entre la variable CYS.S3 et la variable CMI et celui dernier a un effet important négatif sur le Snapshot2.
+
+ie, un étudiant en CMI utilisant l'outil Check Your Smile a tendance de dégrader environ 2,6 points (-3,02652+0,43506) et un étudiant non CMI utilisant l'outil Check Your Smile a tendance de progresser environ 0,4 points (0,43506)
+
+
+On voit que le modèle ANCOVA nous donne un R-ajusté bien meilleur que le modèle ANOVA. (0,4615>>0,006 et 0,4615>>0,09)
+
+Pour le but d'obtenir une valeur de R plus élevé on va passer sous des modèles non linéaires
+
+Erreur de validation croisée:
+
+```{r echo=FALSE}
+all.err=numeric(0)
+K=6
+set.seed(11)
+n=nrow(CYS)
+taille=n%/%K
+set.seed(5)
+alea<-runif(n)
+rang=rank(alea)
+bloc=(rang-1)%/%taille+1
+bloc=as.factor(bloc)
+err=0
+for (k in 1:K){
+  dt=CYS[bloc==k,]
+  modk=lm(snapshot.2 ~ snapshot.1 +TP.S3 + CYS.S3 + CMI + 
+    CYS.S3:CMI,data=CYS[bloc!=k,])
+  pred=predict(modk,newdata=dt)
+  xerr=sum((dt$snapshot.2-pred)^2)
+  err= err+xerr
+}
+print(err/((K+1)))
+```
+# Arbre binaire de décision
+
+```{r include=FALSE}
+library(rpart) # chargement de la librairie
+library(partykit)
+```
+
+En cas on veut construire un arbre de régression de la note Snapshot 2 en fonction d'autres variables
+
+```{r echo=FALSE}
+data5=CYS[,c(4,5,7,9,11)]
+tree.reg5=rpart(snapshot.2~.,data=data5)
+xmat5=xpred.rpart(tree.reg5)
+xerr5=(xmat5-data5[,"snapshot.2"])^2
+CVerr5=apply(xerr5,2,sum)
+```
+
+
+```{r echo=FALSE}
+data6=data5
+data6[,"eval"]=data6[,"snapshot.2"]-data6[,"snapshot.1"]
+data6=data6[,-c(1,2)]
+```
+
+
+
+```{r echo=FALSE}
+tree.reg5=rpart(snapshot.2~.,data=data5,
+                control=rpart.control(cp=as.numeric(attributes(which.min(CVerr5))$names)))
+plot(as.party(tree.reg5), type="simple")
+```
+
+
+Erreur de validation croisée:
+
+```{r echo=FALSE}
+all.err=numeric(0)
+K=6
+set.seed(11)
+n=nrow(CYS)
+taille=n%/%K
+set.seed(5)
+alea<-runif(n)
+rang=rank(alea)
+bloc=(rang-1)%/%taille+1
+bloc=as.factor(bloc)
+err=0
+for (k in 1:K){
+  dt=data5[bloc==k,]
+  modk=rpart(snapshot.2 ~ .,data=data5[bloc!=k,],
+             control=rpart.control(cp=as.numeric(attributes(which.min(CVerr5))$names)))
+  pred=predict(modk,newdata=dt)
+  xerr=sum((dt$snapshot.2-pred)^2)
+  err= err+xerr
+}
+print(err/(K+1))
+```
+
+
+
+```{r echo=FALSE}
+tree.reg6=rpart(eval~.,data=data6)
+xmat6=xpred.rpart(tree.reg6)
+xerr6=(xmat6-data6[,"eval"])^2
+CVerr6=apply(xerr6,2,sum)
+```
+
+
+En cas on veut construire un arbre de régression de l'évolution de la note en fonction d'autres variables
+
+```{r echo=FALSE}
+tree.reg6=rpart(eval~.,data=data6,
+                control=rpart.control(cp=as.numeric(attributes(which.min(CVerr6))$names)))
+plot(as.party(tree.reg6), type="simple")
+```
+
+Erreur de validation croisée:
+
+```{r echo=FALSE}
+all.err=numeric(0)
+K=6
+set.seed(11)
+n=nrow(CYS)
+taille=n%/%K
+set.seed(5)
+alea<-runif(n)
+rang=rank(alea)
+bloc=(rang-1)%/%taille+1
+bloc=as.factor(bloc)
+err=0
+for (k in 1:K){
+  dt=data6[bloc==k,]
+  modk=rpart(eval ~ .,data=data6[bloc!=k,],
+             control=rpart.control(cp=as.numeric(attributes(which.min(CVerr6))$names)))
+  pred=predict(modk,newdata=dt)
+  xerr=sum((dt$eval-pred)^2)
+  err= err+xerr
+}
+print(err/(K+1))
+```
+On a essayé plusieurs fois pour étudier le comportement des erreurs de validation croisée de ces deux types de l'arbre et a gardé le premier donc on ne voit pas l'impacte de CYS.
+
+Lorsau'on prend le second: 
+
+- Parmi les étudiants faisant les TP en anglais, un étudiant utilisant l'outil CYS progresse moins qu'un autre n'utilisant pas CYS. (cf des feuilles 5,6,7). De plus, parmi les étudiants faisant les TP en anglais et utilisant l'outil CYS, un étudiant en CMI progresse moins qu'un autre non CMI. 
+
+- L'arbre binaire de régression nous permet d'observer l'effet de l'outil CYS dans la progression des étudiants n'est pas remarquable.
+
+- L'erreur de validation croisé du modèle ANCOVA est plus petite que celle du l'arbre de décision. Pourtant, on trouve le même phénomène pour les CMI sur l'effet de CYS sur la progression des étudiants.
+
+
+
+```{r include=FALSE}
+for (alpha in seq(0.1,2,0.1)){
+  data7=data5
+  data7[,"eval"]=data7[,"snapshot.2"]-alpha*data7[,"snapshot.1"]
+  data7=data7[,-c(1,2)]
+  tree.reg7=rpart(eval~.,data=data7)
+  xmat7=xpred.rpart(tree.reg7)
+  xerr7=(xmat7-data7[,"eval"])^2
+  CVerr7=apply(xerr7,2,sum)
+  tree.reg7=rpart(eval~.,data=data7,
+              control=rpart.control(cp=as.numeric(attributes(which.min(CVerr7))$names)))
+  #plot(as.party(tree.reg7), type="simple")
+  all.err=numeric(0)
+  K=9
+  set.seed(11)
+  n=nrow(CYS)
+  taille=n%/%K
+  set.seed(5)
+  alea<-runif(n)
+  rang=rank(alea)
+  bloc=(rang-1)%/%taille+1
+  bloc=as.factor(bloc)
+  err=0
+  for (k in 1:K){
+    dt=data7[bloc==k,]
+    modk=rpart(eval ~ .,data=data7[bloc!=k,],
+             control=rpart.control(cp=as.numeric(attributes(which.min(CVerr7))$names)))
+    pred=predict(modk,newdata=dt)
+    xerr=sum((dt$eval-pred)^2)
+    err= err+xerr
+}
+print(err/(K+1))
+}
+```
+
+

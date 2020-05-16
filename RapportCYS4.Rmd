@@ -27,8 +27,9 @@ library(ggplot2)
 
 
 ```{r}
+library(xtable)
 CYS = read.csv("semestre4.csv")
-summary(CYS[,-1])
+xtable(summary(CYS[,-1]))
 ```
 
 
@@ -49,7 +50,7 @@ med=CYS[which(CYS$Filiere=="Medecine"),]
 non_med=CYS[which(CYS$Filiere!="Medecine"),]
 non_med$TP.S4=as.factor(as.character(non_med$TP.S4))
 summary(non_med[,-1])
-summary(med[,-1])
+xtable(summary(med[,-1]))
 ```
 
 
@@ -58,7 +59,7 @@ non_med[,"filiere"]="BIOMIP"
 non_med[which(non_med$Filiere=="EEA" & non_med$CMI=="non"),"filiere"]="EEA_non_CMI"
 non_med[which(non_med$Filiere=="EEA" & non_med$CMI=="oui"),"filiere"]="EEA_CMI"
 non_med$filiere=as.factor(non_med$filiere)
-summary(non_med[,-1])
+xtable(summary(non_med[,-1]))
 ```
 
 
@@ -80,13 +81,16 @@ coolNewPars <-
   list(superpose.symbol = list(pch = 21, cex = 2, col = "gray20",
                                fill = continentColors$color))
 boxplot(snapshot.1~CYS.S4,data=med,names=c("Non","Oui"), 
-        ylab="Snapshot1 in S4")
+        ylab="Snapshot1 in S4",ylim=c(6,28))
+text(x= 1, y= 22, labels= "20 students")
+text(x= 2, y= 22, labels= "21 students")
 boxplot(snapshot.2~CYS.S4,data=med,names=c("Non","Oui"), 
-        ylab="Snapshot2 in S4")
+        ylab="Snapshot2 in S4",ylim=c(6,28))
+text(x= 1, y= 26, labels= "20 students")
+text(x= 2, y= 26, labels= "21 students")
 #plot(med$snapshot.1,med$snapshot.2,col=med$CYS.S4,lwd=8)
 xyplot(snapshot.2 ~ snapshot.1, group=CYS.S4, data=med, 
-       auto.key=list(space="right"),
-       scales = list(x = list(log = 10, equispaced.log = FALSE)),
+       auto.key=list(space="right"),asp=1,
        jitter.x=TRUE, jitter.y=TRUE,par.settings = list(superpose.symbol = list(pch = 19, cex = 1.5,
                                                    col = c("orange", "blue"))))
 ```
@@ -95,20 +99,26 @@ xyplot(snapshot.2 ~ snapshot.1, group=CYS.S4, data=med,
 
 
 
+
 ```{r echo=FALSE}
 boxplot(snapshot.1~filiere,data=non_med, 
-        ylab="Snapshot1 in S4")
+        ylab="Snapshot1 in S4",ylim=c(4,18))
+text(x= 1, y= 16, labels= "18 students")
+text(x= 2, y= 16, labels= "10 students")
+text(x= 3, y= 16, labels= "3 students")
 boxplot(snapshot.2~filiere,data=non_med, 
-        ylab="Snapshot2 in S4")
-
+        ylab="Snapshot2 in S4",ylim=c(4,18))
+text(x= 1, y= 16, labels= "18 students")
+text(x= 2, y= 16, labels= "10 students")
+text(x= 3, y= 16, labels= "3 students")
 xyplot(snapshot.2 ~ snapshot.1, group=filiere, data=non_med, 
        auto.key=list(space="right"),
-       scales = list(x = list(log = 10, equispaced.log = FALSE)),
+       asp=1,
        jitter.x=TRUE, jitter.y=TRUE,par.settings = list(superpose.symbol = list(pch = 19, cex = 1.5,
                                                    col = c("black", "blue","red"))))
 xyplot(snapshot.2 ~ snapshot.1, group=TP.S4, data=non_med, 
        auto.key=list(space="right"), 
-       scales = list(x = list(log = 10, equispaced.log = FALSE)),
+       asp=1,
        jitter.x=TRUE, jitter.y=TRUE,par.settings = list(superpose.symbol = list(pch = 19, cex = 1.5,
                                                    col = c("orange", "blue"))))
 ```
@@ -146,17 +156,21 @@ modR=lm(snapshot.2 ~ (snapshot.1+CYS.S4)^2,data=med)
 summary(modR)
 modbest = step(modR,direction="backward")#,k=log(nrow(med)))
 summary(modbest)
-```
-```{r}
-plot(med$snapshot.1,med$snapshot.2,col=as.numeric(med$CYS.S4),xlab="snapshot.1",ylab="snapshot.2",asp=1)
-abline(modbest)
-legend(1, 95, legend=c("Line 1", "Line 2"),
-       col=c("red", "blue"), lty=1:2, cex=0.8)
+sink("ancova_med.txt")
+print(summary(modbest))
+sink()
 ```
 
+
+
 ```{r}
-ggplot(med[,c(1,2)])+geom_line()
+plot(med$snapshot.1,med$snapshot.2,col=med$CYS.S4,xlab="snapshot.1",ylab="snapshot.2",asp=1)
+
+legend("topright", legend = levels(med$CYS.S4), col = 1:2,pch=21)
+abline(modbest)
 ```
+
+
 
 ## Non-medecine
 ### Modèle ANCOVA de 3 facteur qualitative (CYS S4, TP S4 et filiere) et 1 facteur quantitative(Snapshot1)
@@ -167,6 +181,9 @@ modR=lm(snapshot.2 ~ (snapshot.1+CYS.S4+TP.S4+filiere),data=non_med)
 summary(modR)
 modbest = step(modR,direction="backward",k=log(nrow(med)))
 summary(modbest)
+sink("ancova_non_med.txt")
+print(summary(modbest))
+sink()
 ```
 
 
