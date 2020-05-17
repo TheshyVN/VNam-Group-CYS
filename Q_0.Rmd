@@ -117,7 +117,7 @@ colnames(Q0_4)=c('Electronics','English','E_learning_possibility','E_learning_ex
 
 
 ```{r}
-set.seed(100) # initialisation du générateur
+set.seed(114) # initialisation du générateur
 # Extraction des échantillons
 test.ratio=.2   # part de l'échantillon test
 npop=nrow(Q0_4) # nombre de lignes dans les données
